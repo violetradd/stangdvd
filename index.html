@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>stang screensaver</title>
+    <style>
+      :root {
+        color-scheme: dark;
+      }
+
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+      }
+
+      body {
+        overflow: hidden;
+        background: #000 url("bg.jpg") center / cover no-repeat fixed;
+      }
+
+      #logo {
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 240px;
+        height: auto;
+        user-select: none;
+        -webkit-user-drag: none;
+        will-change: transform;
+        pointer-events: none;
+      }
+    </style>
+  </head>
+  <body>
+    <img id="logo" src="stang.svg" alt="stang" draggable="false" />
+    <script>
+      (() => {
+        const logo = document.getElementById("logo");
+        const reduceMotion =
+          window.matchMedia &&
+          window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+        let x = 0;
+        let y = 0;
+        let vx = 260;
+        let vy = 190;
+        let lastT = null;
+
+        function rand(min, max) {
+          return min + Math.random() * (max - min);
+        }
+
+        function sign() {
+          return Math.random() < 0.5 ? -1 : 1;
+        }
+
+        function getBounds() {
+          const rect = logo.getBoundingClientRect();
+          return { w: rect.width, h: rect.height };
+        }
+
+        function clampPosToViewport() {
+          const { w, h } = getBounds();
+          const vw = window.innerWidth;
+          const vh = window.innerHeight;
+          x = Math.max(0, Math.min(vw - w, x));
+          y = Math.max(0, Math.min(vh - h, y));
+        }
+
+        function pickReasonableSize() {
+          if (!logo.naturalWidth || !logo.naturalHeight) return;
+          const vw = window.innerWidth;
+          const targetW = Math.max(140, Math.min(320, Math.floor(vw * 0.22)));
+          logo.style.width = `${targetW}px`;
+        }
+
+        function init() {
+          pickReasonableSize();
+
+          const { w, h } = getBounds();
+          const vw = window.innerWidth;
+          const vh = window.innerHeight;
+
+          x = rand(0, Math.max(0, vw - w));
+          y = rand(0, Math.max(0, vh - h));
+          vx = rand(220, 360) * sign();
+          vy = rand(160, 300) * sign();
+
+          render();
+          if (!reduceMotion) requestAnimationFrame(tick);
+        }
+
+        function render() {
+          logo.style.transform = `translate3d(${x}px, ${y}px, 0)`;
+        }
+
+        function bounce() {
+          const { w, h } = getBounds();
+          const vw = window.innerWidth;
+          const vh = window.innerHeight;
+
+          if (x <= 0) {
+            x = 0;
+            vx = Math.abs(vx);
+          } else if (x + w >= vw) {
+            x = vw - w;
+            vx = -Math.abs(vx);
+          }
+
+          if (y <= 0) {
+            y = 0;
+            vy = Math.abs(vy);
+          } else if (y + h >= vh) {
+            y = vh - h;
+            vy = -Math.abs(vy);
+          }
+        }
+
+        function tick(t) {
+          if (lastT == null) lastT = t;
+          const dt = Math.min(0.05, (t - lastT) / 1000);
+          lastT = t;
+
+          x += vx * dt;
+          y += vy * dt;
+          bounce();
+          render();
+
+          requestAnimationFrame(tick);
+        }
+
+        window.addEventListener("resize", () => {
+          pickReasonableSize();
+          clampPosToViewport();
+          render();
+        });
+
+        logo.addEventListener("load", init, { once: true });
+        if (logo.complete) init();
+      })();
+    </script>
+  </body>
+</html>
