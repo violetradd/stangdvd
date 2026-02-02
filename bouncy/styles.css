@@ -1,0 +1,56 @@
+:root {
+  color-scheme: dark;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  overflow: hidden;
+  background: #000 url("../bg.jpg") center / cover no-repeat fixed;
+}
+
+.ball {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: clamp(48px, 8vw, 120px);
+  height: auto;
+  user-select: none;
+  -webkit-user-drag: none;
+  will-change: transform;
+  pointer-events: none;
+  z-index: 5;
+  filter: drop-shadow(5px 5px 10px rgba(0, 0, 0, 0.5));
+}
+
+#date-banner {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 10px 14px;
+  font: 500 14px/1.2 system-ui, -apple-system, Segoe UI, Roboto, Ubuntu,
+    Cantarell, Noto Sans, Helvetica, Arial, sans-serif;
+  letter-spacing: 0.01em;
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 40pt;
+  text-align: center;
+  background: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.72),
+    rgba(0, 0, 0, 0.18)
+  );
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  z-index: 10;
+  user-select: none;
+  pointer-events: none;
+}
+
+#date-banner[hidden] {
+  display: none;
+}
