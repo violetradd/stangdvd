@@ -59,21 +59,21 @@
       airDrag: 0.01, // 1/s (higher = more damping)
       restitution: 0.985, // bounce "bounciness"
       wallFriction: 0.9995, // tangential damping on impacts
-      minBounceVy: 260, // keep balls lively off the floor
+      minBounceVy: 400, // keep balls lively off the floor
       minBounceJitter: 180,
       floorKickVx: 80,
     };
 
     const spawnVelocity = {
-      x: 420, // px/s
-      y: 160, // px/s
+      x: 1200, // px/s
+      y: 1200, // px/s
       xJitter: 220,
       yJitter: 120,
     };
 
     const show = {
-      spawnIntervalMs: 30_000,
-      maxBalls: 15,
+      spawnIntervalMs: 15_000,
+      maxBalls: 24,
       playDurationMs: 60_000,
     };
 
