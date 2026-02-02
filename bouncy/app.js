@@ -57,11 +57,12 @@
     const physics = {
       gravity: 1400, // px/s^2
       airDrag: 0.01, // 1/s (higher = more damping)
-      restitution: 0.985, // bounce "bounciness"
+      restitution: 0.98, // bounce "bounciness"
       wallFriction: 0.9995, // tangential damping on impacts
       minBounceVy: 400, // keep balls lively off the floor
       minBounceJitter: 180,
       floorKickVx: 80,
+      floorBoostVy: 120, // extra upward push on floor hits
     };
 
     const spawnVelocity = {
@@ -129,6 +130,7 @@
         ball.vy = -ball.vy * physics.restitution;
         ball.vx *= physics.wallFriction;
         if (phase !== "drain") {
+          ball.vy -= physics.floorBoostVy;
           if (Math.abs(ball.vy) < physics.minBounceVy) {
             ball.vy = -(
               physics.minBounceVy + rand(0, physics.minBounceJitter)
