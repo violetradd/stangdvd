@@ -57,17 +57,17 @@
     const physics = {
       gravity: 1400, // px/s^2
       airDrag: 0.01, // 1/s (higher = more damping)
-      restitution: 0.98, // bounce "bounciness"
+      restitution: 0.95, // bounce "bounciness"
       wallFriction: 0.9995, // tangential damping on impacts
-      minBounceVy: 400, // keep balls lively off the floor
+      minBounceVy: 300, // keep balls lively off the floor
       minBounceJitter: 180,
       floorKickVx: 80,
       floorBoostVy: 120, // extra upward push on floor hits
     };
 
     const spawnVelocity = {
-      x: 1200, // px/s
-      y: 1200, // px/s
+      x: 1100, // px/s
+      y: 1100, // px/s
       xJitter: 220,
       yJitter: 120,
     };
