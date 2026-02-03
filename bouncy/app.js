@@ -66,8 +66,8 @@
     };
 
     const spawnVelocity = {
-      x: 1100, // px/s
-      y: 1100, // px/s
+      x: 900, // px/s
+      y: 900, // px/s
       xJitter: 220,
       yJitter: 120,
     };
@@ -78,24 +78,30 @@
       playDurationMs: 60_000,
     };
 
+    const sizeJitter = 0.25; // +/- 25%
+    const collisionScale = 1; // 1 = use scaled box size for collisions
+
     let phase = "spawning"; // spawning -> play -> drain
     let phaseStartedAt = null;
     let nextSpawnAt = null;
     let floorEnabled = true;
     let lastT = null;
 
-    /** @type {{el: HTMLImageElement, x: number, y: number, vx: number, vy: number, w: number, h: number, r: number}[]} */
+    /** @type {{el: HTMLImageElement, x: number, y: number, vx: number, vy: number, w: number, h: number, r: number, scale: number, baseW: number, baseH: number}[]} */
     const balls = [];
 
     function measure(ball) {
-      const { w, h } = getBounds(ball.el);
-      ball.w = w;
-      ball.h = h;
-      ball.r = Math.max(1, Math.min(w, h) / 2);
+      const baseW = ball.el.offsetWidth || getBounds(ball.el).w;
+      const baseH = ball.el.offsetHeight || getBounds(ball.el).h;
+      ball.baseW = baseW;
+      ball.baseH = baseH;
+      ball.w = baseW * ball.scale;
+      ball.h = baseH * ball.scale;
+      ball.r = Math.max(1, Math.max(ball.w, ball.h) * 0.5 * collisionScale);
     }
 
     function renderBall(ball) {
-      ball.el.style.transform = `translate3d(${ball.x}px, ${ball.y}px, 0)`;
+      ball.el.style.transform = `translate3d(${ball.x}px, ${ball.y}px, 0) scale(${ball.scale})`;
     }
 
     function getPlayBounds(ball) {
@@ -203,7 +209,21 @@
       el.style.display = "";
       document.body.appendChild(el);
 
-      const ball = { el, x: 0, y: 0, vx: 0, vy: 0, w: 0, h: 0, r: 0 };
+      const ball = {
+        el,
+        x: 0,
+        y: 0,
+        vx: 0,
+        vy: 0,
+        w: 0,
+        h: 0,
+        r: 0,
+        scale: 1,
+        baseW: 0,
+        baseH: 0,
+      };
+      ball.scale = 1 + rand(-sizeJitter, sizeJitter);
+      renderBall(ball);
       measure(ball);
 
       const vw = window.innerWidth;
