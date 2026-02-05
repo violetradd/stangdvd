@@ -66,7 +66,7 @@
     };
 
     const squash = {
-      compress: 0.12,
+      compress: 0.5,
       stretch: 0.08,
       speedForMax: 1400,
       minSpeed: 120,
