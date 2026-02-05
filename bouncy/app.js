@@ -65,6 +65,14 @@
       floorBoostVy: 120, // extra upward push on floor hits
     };
 
+    const squash = {
+      compress: 0.12,
+      stretch: 0.08,
+      speedForMax: 1400,
+      minSpeed: 120,
+      recover: 12, // 1/s
+    };
+
     const spawnVelocity = {
       x: 900, // px/s
       y: 900, // px/s
@@ -87,7 +95,7 @@
     let floorEnabled = true;
     let lastT = null;
 
-    /** @type {{el: HTMLImageElement, x: number, y: number, vx: number, vy: number, w: number, h: number, r: number, scale: number, baseW: number, baseH: number}[]} */
+    /** @type {{el: HTMLImageElement, x: number, y: number, vx: number, vy: number, w: number, h: number, r: number, scale: number, baseW: number, baseH: number, mass: number, invMass: number, squashX: number, squashY: number}[]} */
     const balls = [];
 
     function measure(ball) {
@@ -98,10 +106,35 @@
       ball.w = baseW * ball.scale;
       ball.h = baseH * ball.scale;
       ball.r = Math.max(1, Math.max(ball.w, ball.h) * 0.5 * collisionScale);
+      ball.mass = Math.max(1, ball.r * ball.r);
+      ball.invMass = 1 / ball.mass;
     }
 
     function renderBall(ball) {
-      ball.el.style.transform = `translate3d(${ball.x}px, ${ball.y}px, 0) scale(${ball.scale})`;
+      const sx = ball.scale * ball.squashX;
+      const sy = ball.scale * ball.squashY;
+      ball.el.style.transform = `translate3d(${ball.x}px, ${ball.y}px, 0) scale(${sx}, ${sy})`;
+    }
+
+    function relaxSquash(ball, dt) {
+      const decay = Math.exp(-squash.recover * dt);
+      ball.squashX = 1 + (ball.squashX - 1) * decay;
+      ball.squashY = 1 + (ball.squashY - 1) * decay;
+    }
+
+    function applySquash(ball, nx, ny, impactSpeed) {
+      if (impactSpeed < squash.minSpeed) return;
+      const strength = Math.min(1, impactSpeed / squash.speedForMax);
+      if (strength <= 0) return;
+      const compress = 1 - squash.compress * strength;
+      const stretch = 1 + squash.stretch * strength;
+      if (Math.abs(nx) >= Math.abs(ny)) {
+        ball.squashX = Math.min(ball.squashX, compress);
+        ball.squashY = Math.max(ball.squashY, stretch);
+      } else {
+        ball.squashY = Math.min(ball.squashY, compress);
+        ball.squashX = Math.max(ball.squashX, stretch);
+      }
     }
 
     function getPlayBounds(ball) {
@@ -119,20 +152,27 @@
 
       if (ball.x < 0) {
         ball.x = 0;
+        const impactSpeed = Math.abs(ball.vx);
         ball.vx = -ball.vx * physics.restitution;
         ball.vy *= physics.wallFriction;
+        applySquash(ball, 1, 0, impactSpeed);
       } else if (ball.x > maxX) {
         ball.x = maxX;
+        const impactSpeed = Math.abs(ball.vx);
         ball.vx = -ball.vx * physics.restitution;
         ball.vy *= physics.wallFriction;
+        applySquash(ball, -1, 0, impactSpeed);
       }
 
       if (ball.y < 0 && ball.vy < 0) {
         ball.y = 0;
+        const impactSpeed = Math.abs(ball.vy);
         ball.vy = -ball.vy * physics.restitution;
         ball.vx *= physics.wallFriction;
+        applySquash(ball, 0, 1, impactSpeed);
       } else if (floorEnabled && ball.y > maxY) {
         ball.y = maxY;
+        const impactSpeed = Math.abs(ball.vy);
         ball.vy = -ball.vy * physics.restitution;
         ball.vx *= physics.wallFriction;
         if (phase !== "drain") {
@@ -144,6 +184,7 @@
           }
           ball.vx += rand(-physics.floorKickVx, physics.floorKickVx);
         }
+        applySquash(ball, 0, -1, impactSpeed);
       }
     }
 
@@ -179,23 +220,31 @@
           const ny = dy / dist;
           const overlap = minDist - dist;
 
-          a.x -= nx * overlap * 0.5;
-          a.y -= ny * overlap * 0.5;
-          b.x += nx * overlap * 0.5;
-          b.y += ny * overlap * 0.5;
+          const totalInvMass = a.invMass + b.invMass;
+          if (totalInvMass === 0) continue;
+          const correction = overlap / totalInvMass;
+          a.x -= nx * correction * a.invMass;
+          a.y -= ny * correction * a.invMass;
+          b.x += nx * correction * b.invMass;
+          b.y += ny * correction * b.invMass;
 
           const rvx = b.vx - a.vx;
           const rvy = b.vy - a.vy;
           const velAlongNormal = rvx * nx + rvy * ny;
           if (velAlongNormal > 0) continue;
 
-          const impulse = (-(1 + physics.restitution) * velAlongNormal) / 2;
+          const impactSpeed = Math.abs(velAlongNormal);
+          applySquash(a, nx, ny, impactSpeed);
+          applySquash(b, nx, ny, impactSpeed);
+
+          const impulse =
+            (-(1 + physics.restitution) * velAlongNormal) / totalInvMass;
           const ix = impulse * nx;
           const iy = impulse * ny;
-          a.vx -= ix;
-          a.vy -= iy;
-          b.vx += ix;
-          b.vy += iy;
+          a.vx -= ix * a.invMass;
+          a.vy -= iy * a.invMass;
+          b.vx += ix * b.invMass;
+          b.vy += iy * b.invMass;
         }
       }
     }
@@ -221,6 +270,10 @@
         scale: 1,
         baseW: 0,
         baseH: 0,
+        mass: 1,
+        invMass: 1,
+        squashX: 1,
+        squashY: 1,
       };
       ball.scale = 1 + rand(-sizeJitter, sizeJitter);
       renderBall(ball);
@@ -277,7 +330,10 @@
         if (t - phaseStartedAt >= show.playDurationMs) startPhase("drain", t);
       }
 
-      for (const ball of balls) stepBall(ball, dt);
+      for (const ball of balls) {
+        stepBall(ball, dt);
+        relaxSquash(ball, dt);
+      }
       resolveBallCollisions();
       for (const ball of balls) collideWalls(ball);
 
