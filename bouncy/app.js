@@ -74,7 +74,7 @@
 
     const show = {
       spawnIntervalMs: 15_000,
-      maxBalls: 24,
+      maxBalls: 15,
       playDurationMs: 60_000,
     };
 
