@@ -373,7 +373,7 @@
       measure(ball);
 
       const vw = window.innerWidth;
-      ball.x = Math.max(0, Math.floor(vw / 2 - ball.w / 2));
+      ball.x = rand(0, Math.max(0, vw - ball.w));
       ball.y = -ball.h - 40;
       ball.vx =
         (spawnVelocity.x +
@@ -417,9 +417,9 @@
       if (nextSpawnAt == null) nextSpawnAt = t;
 
       if (phase === "spawning") {
-        while (balls.length < show.maxBalls && t >= nextSpawnAt) {
+        if (balls.length < show.maxBalls && t >= nextSpawnAt) {
           spawnBall();
-          nextSpawnAt += show.spawnIntervalMs;
+          nextSpawnAt = t + show.spawnIntervalMs;
         }
         if (balls.length >= show.maxBalls) startPhase("play", t);
       } else if (phase === "play") {
