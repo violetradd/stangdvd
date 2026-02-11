@@ -1,7 +1,13 @@
 (() => {
-  // Refresh periodically so date-based banner updates without manual reload.
-  // 4 hours = 4 * 60 * 60 * 1000 ms
-  window.setTimeout(() => window.location.reload(), 4 * 60 * 60 * 1000);
+  // Reload on the top of each hour (local time) so date-based banner stays fresh.
+  (function scheduleHourlyReload() {
+    const now = new Date();
+    const next = new Date(now);
+    next.setMinutes(0, 0, 0);
+    next.setHours(next.getHours() + 1);
+    const delay = Math.max(1000, next - now);
+    window.setTimeout(() => window.location.reload(), delay);
+  })();
 
   const logo = document.getElementById("logo");
   const banner = document.getElementById("date-banner");
